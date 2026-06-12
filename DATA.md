@@ -80,7 +80,3 @@ e.g. `ddpm_w1.0.npz` (w=1). `runs/outputs_scvi/samples/scvi.npz` has the same la
 
 ---
 
-## 6. Run logs
-
-`runs/outputs_*_run.log`, `runs/outputs_kang_train.log`, `runs/outputs_kang_more.log` — stdout of the
-corresponding training/eval runs (loss curves, val MMD, final metrics). Regenerable.
