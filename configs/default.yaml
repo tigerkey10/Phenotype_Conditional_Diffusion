@@ -1,0 +1,81 @@
+# Phenotype-Conditional Diffusion for Single-Cell Gene Expression Generation
+# Default configuration. All paths are relative to the repository root.
+
+seed: 0
+device: cuda            # cuda | cpu
+out_dir: runs/outputs        # everything (data, checkpoints, samples, figures, metrics) lands here
+
+data:
+  n_hvg: 1000           # number of highly variable genes (G)
+  min_genes: 200        # per-cell filter
+  min_cells: 3          # per-gene filter
+  target_sum: 10000.0   # total-count normalization target
+  val_frac: 0.10        # fraction of cells held out for validation (best-MMD checkpoint)
+  test_frac: 0.10       # fraction of cells held out for final evaluation
+  cache: runs/outputs/pbmc3k_hvg.h5ad   # preprocessed AnnData cache
+
+model:
+  hidden: 512           # residual MLP width
+  n_blocks: 4           # number of residual blocks
+  time_dim: 128         # sinusoidal time-embedding dimension
+  class_dim: 128        # learned class-label embedding dimension
+  dropout: 0.0
+
+diffusion:
+  timesteps: 1000       # T
+  beta_start: 1.0e-4
+  beta_end: 0.02
+  schedule: cosine      # linear | cosine  (cosine spends less budget at high noise)
+  pred_type: x0         # x0 | eps. The proposal specifies eps-prediction; on this
+                        # sparse, near-Gaussian-scale data eps-prediction amplifies
+                        # the irreducible noise error ~150x at the first DDIM step
+                        # and destabilizes sampling, so x0-prediction is the default.
+
+train:
+  epochs: 200
+  batch_size: 256
+  lr: 1.0e-4
+  weight_decay: 0.0
+  cfg_dropout: 0.10     # probability of dropping the label (null token) during training
+  ema_decay: 0.999
+  eval_every: 10        # run validation MMD every N epochs
+  num_workers: 4
+  gate_weight: 1.0      # BCE weight for the learned dropout-gate head
+  nonzero_weight: 5.0   # extra weight on expressed genes in the magnitude MSE, so the
+                        # ~93%-zero background does not drown nonzero-magnitude fidelity
+
+sample:
+  ddim_steps: 50
+  n_per_class: 1000
+  guidance_scales: [0, 1, 3, 5]
+  zero_gate: learned    # learned | hurdle | none.
+                        #  learned: jointly-trained gate head ranks cells by P(expressed)
+                        #    and zeros the empirical-rate fraction (content-conditioned).
+                        #  hurdle:  fixed MLE per-class/gene zero rate, magnitude-ranked.
+                        #  none:    raw clamped diffusion output (no dropout modeling).
+  magnitude_calibration: quantile   # quantile | none. Rank-preservingly maps each
+                        # gene's expressed values onto the real per-class nonzero
+                        # quantiles, fixing the diffusion's undershot dynamic range.
+  calib_quantiles: 64   # number of stored quantile levels per class/gene
+
+eval:
+  pca_dim: 50
+  mmd_subsample: 1000   # cap per-group sample count for MMD (memory)
+  markers:              # canonical marker gene -> cell type it should be high in
+    CD3D:  ["CD4 T cells", "CD8 T cells"]
+    MS4A1: ["B cells"]
+    LYZ:   ["CD14+ Monocytes", "FCGR3A+ Monocytes"]
+    NKG7:  ["NK cells"]
+    GNLY:  ["NK cells"]
+    FCGR3A: ["FCGR3A+ Monocytes", "NK cells"]
+    PPBP:  ["Megakaryocytes"]
+    CD8A:  ["CD8 T cells"]
+
+baseline:
+  vae:
+    latent_dim: 32
+    hidden: 512
+    epochs: 200
+    batch_size: 256
+    lr: 1.0e-3
+    kl_weight: 1.0e-3

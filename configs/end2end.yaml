@@ -1,0 +1,80 @@
+# Phenotype-Conditional Diffusion — END-TO-END variant (v2).
+#
+# Differs from default.yaml (v1) only in the zero-inflation handling:
+#   - standardize_mode: expressed  -> per-gene mean/std over EXPRESSED cells only, so
+#     expressed magnitudes are unit-scaled (not squashed by the 93%-zero spike) and the
+#     diffusion can generate them directly.
+#   - magnitude_calibration: none  -> NO post-hoc quantile injection; magnitudes come
+#     entirely from the learned diffusion. Dropout is handled by the learned gate.
+#   - nonzero_weight raised so the diffusion fits the (now unit-scale) expressed entries.
+# Everything else (architecture, diffusion, schedule, gate) is identical to v1.
+
+seed: 0
+device: cuda
+out_dir: runs/outputs_end2end
+
+data:
+  n_hvg: 1000
+  min_genes: 200
+  min_cells: 3
+  target_sum: 10000.0
+  val_frac: 0.10
+  test_frac: 0.10
+  cache: runs/outputs/pbmc3k_hvg.h5ad   # reuse the same preprocessed AnnData
+
+model:
+  hidden: 512
+  n_blocks: 4
+  time_dim: 128
+  class_dim: 128
+  dropout: 0.0
+
+diffusion:
+  timesteps: 1000
+  beta_start: 1.0e-4
+  beta_end: 0.02
+  schedule: cosine
+  pred_type: x0
+
+train:
+  epochs: 200
+  batch_size: 256
+  lr: 1.0e-4
+  weight_decay: 0.0
+  cfg_dropout: 0.10
+  ema_decay: 0.999
+  eval_every: 10
+  num_workers: 4
+  gate_weight: 1.0
+  nonzero_weight: 10.0          # higher: focus capacity on expressed magnitudes
+  standardize_mode: expressed   # <-- end-to-end key change
+
+sample:
+  ddim_steps: 50
+  n_per_class: 1000
+  guidance_scales: [0, 1, 3, 5]
+  zero_gate: learned
+  magnitude_calibration: none   # <-- no post-hoc calibration
+  calib_quantiles: 64
+
+eval:
+  pca_dim: 50
+  mmd_subsample: 1000
+  markers:
+    CD3D:  ["CD4 T cells", "CD8 T cells"]
+    MS4A1: ["B cells"]
+    LYZ:   ["CD14+ Monocytes", "FCGR3A+ Monocytes"]
+    NKG7:  ["NK cells"]
+    GNLY:  ["NK cells"]
+    FCGR3A: ["FCGR3A+ Monocytes", "NK cells"]
+    PPBP:  ["Megakaryocytes"]
+    CD8A:  ["CD8 T cells"]
+
+baseline:
+  vae:
+    latent_dim: 32
+    hidden: 512
+    epochs: 200
+    batch_size: 256
+    lr: 1.0e-3
+    kl_weight: 1.0e-3
