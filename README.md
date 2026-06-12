@@ -20,7 +20,7 @@ Committed (tracked) on the left; regenerable artifacts (git-ignored) grouped und
 `data/`, `runs/`, `logs/`.
 
 ```
-genmodel_termprjct/
+Phenotype_Conditional_Diffusion/
 ├── README.md                       # this file (science + results, §1–13)
 ├── DATA.md                         # data dictionary: schema of every .h5ad / .npz / .pt
 ├── requirements.txt
@@ -44,19 +44,8 @@ genmodel_termprjct/
 │   ├── pert_build_train.py         #   §11 Kang perturbation: build + train
 │   └── pert_evaluate.py            #   §11 held-out perturbation prediction
 ├── figures/                        # small committed figures (e.g. umap_v1_vs_v2.png)
-├── docs/proposal.pdf               # original project proposal
-│
-│  ── git-ignored (regenerable) ──
-├── data/                           # raw downloads (pbmc3k, kang_2018.h5ad)
-├── runs/                           # all model outputs, one sub-dir per run:
-│   ├── outputs/                    #   PBMC v1 (default config)
-│   ├── outputs_v1_calibrated/      #   PBMC v1 preserved
-│   ├── outputs_end2end/            #   PBMC v2 (§8)
-│   ├── outputs_scvi/               #   scVI baseline samples (§9)
-│   └── outputs_kang*/              #   perturbation models, per held-out type (§11)
-└── logs/                           # stdout logs from training / eval
 ```
-Each `runs/outputs*/` holds `checkpoints/`, `samples/`, `metrics/`, `figures/` (see DATA.md).
+
 
 ---
 
