@@ -6,7 +6,7 @@ for the science; this file is purely "what is in each file".
 
 ---
 
-## 1. Raw downloads — `data/`
+## Raw downloads — `data/`
 
 Regenerated automatically on first run; not committed (see `.gitignore`).
 
